@@ -1,0 +1,64 @@
+{
+  "name": "dsh-restart",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.js",
+  "description": "Self-restart for DSH: queue a restart, wait until every session is idle, relaunch the app, restore the window, then wake the requesting session with a resume note. 让 DSH 自己重启：等所有会话空闲 → 重启 → 窗口原样恢复 → 唤醒发起会话继续。",
+  "license": "MIT",
+  "author": "qinguan-0813",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "restart",
+    "relaunch",
+    "self-restart",
+    "win32",
+    "windows"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qinguan-0813/dsh-restart.git"
+  },
+  "homepage": "https://github.com/qinguan-0813/dsh-restart#readme",
+  "bugs": {
+    "url": "https://github.com/qinguan-0813/dsh-restart/issues"
+  },
+  "os": [
+    "win32"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "meta": {
+    "title": "自动重启 dsh-restart",
+    "description": "改完插件不用手动关开 DSH：等所有会话空闲后自动重启，重启后窗口状态原样恢复，并把发起重启的会话叫回来继续。"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "compatibility": {
+      "node": ">=20",
+      "dsh": ">=0.2.0-rc.1"
+    }
+  },
+  "exports": {
+    ".": "./index.js",
+    "./helper.js": "./helper.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "helper.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/schemastery": "*",
+    "@deepseek-ai/dsh-llm": "*",
+    "@deepseek-ai/dsh-tools": "*"
+  }
+}

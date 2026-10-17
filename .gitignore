@@ -1,0 +1,15 @@
+node_modules/
+*.log
+*.tgz
+.DS_Store
+Thumbs.db
+
+# 运行时产物（由插件自己生成在 $DSH_HOME，不该进仓库）
+dsh-restart-state.json
+dsh-restart-window.json
+dsh-restart-helper.ps1
+dsh-restart-watch.ps1
+dsh-restart-watch.vbs
+dsh-restart-watch-task.xml
+dsh-restart-acting.lock
+dsh-restart.log

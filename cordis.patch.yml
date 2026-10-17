@@ -1,0 +1,24 @@
+# dsh-restart bundle patch: one insert row carrying the whole plugin config.
+# profile 的 cordis.patch.yml 里按 id（restart）覆盖这一行；patch 会替换整份 config，
+# 所以要保留的键请全部重述。
+- insert:
+    - id: restart
+      name: dsh-restart
+      config:
+        # 状态文件（排队请求 + 重启前后日志）。留空 = $DSH_HOME/dsh-restart-state.json
+        statePath: ''
+        # 要重启的 exe。留空 = 自动探测（进程自己是 Electron 宿主时用 process.execPath）
+        exePath: ''
+        # 宿主 Web 口，helper 用它判断旧进程是否真的退出、端口是否释放
+        port: 19387
+        # 多久检查一次"有没有空闲"
+        pollMs: 2000
+        # 检测到空闲后还要等多久才动手。0 = **立刻**（主人 2026-10-17 定的）；
+        # 想留点缓冲就调成正数（毫秒）。
+        idleGraceMs: 0
+        # 重启后等多久再唤醒发起会话（等 host 起来 + UI 恢复会话）
+        resumeDelayMs: 12000
+        # 唤醒前最多等会话被加载多久（DSH 重启后 UI 会自动恢复会话）
+        resumeWaitMs: 90000
+        # 注册 dsh_restart_status（排查用）
+        debugTools: true
