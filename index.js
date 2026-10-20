@@ -164,15 +164,31 @@ export function apply(ctx, config) {
         busy.push({ kind: 'agent', id: sessionIdOf(agent), status, queued: nextTurn + nextStep })
       }
     }
+    // ⚠️ 后台任务必须查，而且**必须带 owner 参数**（2026-10-20 实测踩坑）：
+    //    `jobs.list()` 无参调用一行都拿不到 —— 宿主自己（dsh-desktop-host 的
+    //    hasDesktopActiveTasks）是对 `undefined` 和**每个会话 id** 各查一遍的：
+    //      [void 0, ...liveAgents].some((agent) => jobs.list(agent?.id).some(...))
+    //    本喵原来写的是 jobs.list() ✗ → 后台任务在跑照样重启 ✗（主人后台跑着活被重启了）。
     const jobs = ctx.get?.('jobs')
-    try {
-      for (const job of jobs?.list?.() ?? []) {
-        if (job?.status === 'running' || job?.status === 'stopping') {
-          busy.push({ kind: 'job', id: String(job.id ?? '?'), status: String(job.status) })
+    if (jobs && typeof jobs.list === 'function') {
+      const seen = new Set()
+      const owners = [undefined, ...agents.map((agent) => (agent?.id === undefined ? undefined : agent.id))]
+      for (const owner of owners) {
+        let list = []
+        try {
+          list = jobs.list(owner) ?? []
+        } catch {
+          continue // 某个 owner 查不了就跳过，别让一个异常把整轮检查废掉
+        }
+        for (const job of list) {
+          const id = String(job?.id ?? '?')
+          if (seen.has(id)) continue
+          if (job?.status === 'running' || job?.status === 'stopping') {
+            seen.add(id)
+            busy.push({ kind: 'job', id, status: String(job.status), owner: owner ?? '(unowned)' })
+          }
         }
       }
-    } catch {
-      // 没有 jobs 服务就算了
     }
     return busy
   }
@@ -403,6 +419,14 @@ Note ("watch tick end (pid " + $PID + ", " + $seq + " passes)")
     if (!exe) {
       appendLog('restart', '无法确定要重启的 exe（exePath 留空且当前不是桌面宿主）——取消')
       clearState()
+      return
+    }
+    // 动手前再确认一次。tick 检查到这里最多隔 2 秒，但"后台任务在这 2 秒里刚起来"是完全
+    // 可能的 —— 那种情况下宁可退回排队，也不要打断别人的活。
+    const busyNow = listBusy()
+    if (busyNow.length > 0) {
+      appendLog('restart', `动手前又忙起来了（${busyNow.map((b) => `${b.kind}:${b.id}`).join(', ')}）—— 退回排队`)
+      writeState({ ...state, phase: 'queued' })
       return
     }
     writeState({ ...state, phase: 'restarting', restartStartedAt: Date.now() })

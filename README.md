@@ -192,6 +192,18 @@ powershell -File test-window.ps1                               # 只读验证窗
    一旦某次 helper 没跑起来就永久卡死，**后续所有排队请求都不再执行**。
    防重复看 `state.phase` 就够了。
 6. **任务 XML 必须是 UTF-16 LE + BOM**：`schtasks /xml` 只吃这种编码。
+7. **`jobs.list()` 必须带 owner**（2026-10-20 踩的，代价是打断了一次真实的后台任务）：
+   DSH 的 jobs 服务签名是 `list(owner)`，**无参调用一行都拿不到**。宿主自己的
+   `hasDesktopActiveTasks` 是对 `undefined` 和**每个会话 id** 各查一遍：
+
+   ```js
+   [void 0, ...liveAgents].some((agent) =>
+     jobs.list(agent?.id).some((job) => job.status === "running" || job.status === "stopping"))
+   ```
+
+   写成 `jobs.list()` 的后果是：后台任务在跑也判定"空闲"→ 重启把人家的活打断了。
+   验证方法：起一个 `run_in_background` 任务，然后看 `dsh_restart_status` 的 `busy`
+   里有没有 `{ "kind": "job", ... }` —— 没有就说明这段检查没生效。
 
 ## License
 
